@@ -1,6 +1,6 @@
 # 🛡️ VerifyAI — Fake News Detection Web App
 
-🔗 **Live Demo:** [https://verifyai-fake-news-detector.vercel.app](https://verifyai-fake-news-detector.vercel.app)
+🔗 **Live Demo:** [https://verifyai-newscheck.vercel.app](https://verifyai-newscheck.vercel.app)
 
 An AI-powered fake news detection system that uses a calibrated ensemble ML pipeline with multi-signal analysis to classify news articles as real or fake — with explainable confidence scores.
 
