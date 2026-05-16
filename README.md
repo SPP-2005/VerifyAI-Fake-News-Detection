@@ -1,114 +1,99 @@
-# 📰 Fake News Detection Web App
+# 🛡️ VerifyAI — Fake News Detection Web App
 
-This is a basic full-stack fake news detection web application that allows users to input news content and get instant predictions on whether the article is **real** or **fake**. The model uses traditional NLP techniques and logistic regression for classification, presented through a clean, interactive frontend.
+🔗 **Live Demo:** [https://verifyai-fake-news-detector.vercel.app](https://verifyai-fake-news-detector.vercel.app)
+
+An AI-powered fake news detection system that uses a calibrated ensemble ML pipeline with multi-signal analysis to classify news articles as real or fake — with explainable confidence scores.
 
 ---
 
 ## ✅ Features
 
-- ✅ Logistic Regression model trained on a curated fake news dataset
-- ✅ TF-IDF vectorization of input text
-- ✅ Flask-based backend with a REST API for predictions
-- ✅ Frontend built using HTML, CSS, and JavaScript
-- ✅ Animated confidence bar showing model certainty
-- ✅ Optional keyword-based confidence booster for suspicious words
-- ✅ Responsive design with styled user interface
-- ✅ Clean, modular structure (separate model, API, and UI layers)
+- 🤖 Calibrated ensemble classifier (Logistic Regression + SVM + SGD) with soft voting
+- 📊 Word-level and character-level TF-IDF with 12 custom statistical features
+- 🎯 95.9% accuracy on 37K+ balanced dataset with 5-fold cross-validation
+- 📈 Multi-signal analysis: sensationalism scoring, credibility detection, formal tone analysis
+- 🔍 Short-text uncertainty damping to prevent overconfident predictions
+- 🎨 Modern glassmorphism UI with animated gauges and real-time analytics
+- ☁️ Deployed on Vercel with auto-deploy from GitHub
 
 ---
 
 ## 🧠 How It Works
 
-1. The user enters a news headline or article into the frontend form.
-2. A JavaScript function sends this data to the Flask API using a POST request.
-3. The backend loads a trained ML model (`fake_news_model.pkl`) and processes the input.
-4. The model returns a **"real"** or **"fake"** label with a **confidence percentage**.
-5. The frontend displays the result along with a smooth animated confidence bar and color-coded label.
+1. User enters a news headline or article
+2. Text is cleaned and vectorized using dual TF-IDF (word + character n-grams)
+3. Three calibrated classifiers vote on the prediction via soft voting
+4. Multi-signal post-processing adjusts confidence based on:
+   - Sensationalism keywords
+   - Credibility phrases (e.g., "according to", "officials said")
+   - Formal tone indicators (proper nouns, numbers, low caps)
+   - Short-text uncertainty damping
+5. Final verdict with confidence %, credibility score, and risk factors
 
 ---
 
-## 📁 Folder Structure
+## 📁 Project Structure
 
 ```
-project/
-├── app.py                  # Flask backend API
-├── model_trainer.py        # Training script for the ML model
-├── IFND.csv                # Dataset file
-├── fake_news_model.pkl     # Trained ML model
-│
+├── app.py                  # Flask API with multi-signal analysis
+├── model_trainer.py        # Ensemble model training pipeline
+├── feature_utils.py        # Shared text cleaning & feature extraction
+├── vercel.json             # Vercel deployment config
+├── requirements.txt        # Python dependencies
 ├── templates/
-│   └── index.html          # Frontend HTML
-│
+│   └── index.html          # Frontend UI
 ├── static/
-│   ├── style.css           # Custom CSS styles
-│   ├── favicon.png         # Tab icon (optional)
-│   └── wallpaper.jpg       # Background image
+│   ├── style.css           # Glassmorphism dark theme
+│   ├── favicon.png         # Shield icon
+│   └── wallpaper.jpg       # Background
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: HTML, CSS, JavaScript
-- **Backend**: Flask (Python)
-- **Machine Learning**: Scikit-learn (TF-IDF + Logistic Regression)
-- **Data Handling**: Pandas, NumPy
+- **Frontend:** HTML, CSS, JavaScript
+- **Backend:** Flask (Python)
+- **ML:** Scikit-learn (TF-IDF, VotingClassifier, CalibratedClassifierCV)
+- **Data:** Pandas, NumPy
+- **Deployment:** Vercel
 
 ---
 
-## 📦 Setup Instructions
+## 📦 Local Setup
 
-### Step 1: Install Dependencies
 ```bash
-pip install flask pandas scikit-learn joblib
-```
-
-### Step 2: Train the Model (Optional if `fake_news_model.pkl` already exists)
-```bash
+pip install -r requirements.txt
 python model_trainer.py
-```
-
-### Step 3: Run the Flask App
-```bash
 python app.py
 ```
+Then open `http://localhost:5000`
 
-### Step 4: Open in Browser
-```
-http://localhost:5000
-```
+> **Note:** You need `IFND.csv` (Indian Fake News Dataset) in the project root to train the model.
 
 ---
 
-## 🧪 Dataset Info
+## 📊 Model Performance
 
-- Dataset: `IFND.csv` (Indian Fake News Dataset)
-- Used columns: `"Statement"` as input, `"Label"` as target (`TRUE` = 1, `Fake` = 0)
-- Model trained using `TF-IDF` features and balanced sampling
-
----
-
-## 📊 Limitations
-
-- The model is **static**, trained once and not updated in real-time
-- It does **not perform full fact verification**, only pattern detection for the tone of fake news in the dataset provided in the files
-- May fail on sarcasm, satire, or formal-sounding falsehoods
-- May not distinguish between fake, misleading, or out-of-distribution content beyond what it has seen in training
+| Metric | Score |
+|--------|-------|
+| Accuracy | 95.9% |
+| F1 Score | 0.959 |
+| CV Accuracy | 95.8% ± 0.5% |
+| Precision (Fake) | 98% |
+| Recall (Real) | 98% |
 
 ---
 
-## 🚀 Future Improvements
+## ⚠️ Limitations
 
-- 🔍 Integrate transformer models like BERT for better semantic understanding
-- 🧠 Add claim verification using natural language inference (e.g., FEVER dataset)
-- 🌐 Deploy to the web via Render/Heroku
-- 🔄 Add feedback loop for user correction and retraining
-- 🛡️ Include more complex misinformation types (e.g., satire, propaganda)
+- Static model — not updated in real-time
+- Pattern-based detection, not full fact verification
+- May struggle with sarcasm, satire, or formal-sounding falsehoods
+- Training dataset is primarily Indian political news
 
 ---
 
 ## 👋 Author
 
-Made with ❤️ by a passionate developer exploring the intersection of **AI** and **media credibility**.
-
-Feel free to connect, suggest improvements, or collaborate on future upgrades!
+Made with ❤️ by [SPP-2005](https://github.com/SPP-2005)
