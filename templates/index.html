@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VerifyAI — Fake News Detector</title>
+  <meta name="description" content="AI-powered fake news detection with multi-signal analysis, sensationalism scoring, and credibility assessment."/>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+</head>
+<body>
+  <div class="app-wrapper">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-icon">🛡️</div>
+      <h1>VerifyAI</h1>
+      <p>AI-Powered Multi-Signal Fake News Detection</p>
+    </header>
+
+    <!-- Input Card -->
+    <div class="glass-card input-section">
+      <label for="newsInput">Paste news article or headline</label>
+      <textarea id="newsInput" placeholder="Enter the news content you want to verify...&#10;&#10;Tip: Longer articles give more accurate results."></textarea>
+      <div class="input-footer">
+        <span class="char-count" id="charCount">0 characters</span>
+        <button class="analyze-btn" id="analyzeBtn">
+          <span class="spinner"></span>
+          <span class="btn-text">🔍 Analyze</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section" id="resultsSection">
+      <div class="glass-card">
+        <!-- Verdict Banner -->
+        <div class="verdict-banner" id="verdictBanner">
+          <div class="verdict-icon" id="verdictIcon"></div>
+          <div class="verdict-info">
+            <h2 id="verdictLabel"></h2>
+            <p id="verdictDesc"></p>
+          </div>
+        </div>
+
+        <!-- Confidence Bar -->
+        <div class="confidence-section">
+          <div class="confidence-header">
+            <span>Model Confidence</span>
+            <span class="confidence-value" id="confValue">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <!-- Gauge Row -->
+        <div class="gauges-row">
+          <div class="gauge-card">
+            <h4>Credibility Score</h4>
+            <div class="circular-gauge" id="credGauge">
+              <svg viewBox="0 0 100 100">
+                <circle class="track" cx="50" cy="50" r="42"/>
+                <circle class="fill" id="credFill" cx="50" cy="50" r="42"
+                  stroke-dasharray="263.9" stroke-dashoffset="263.9"/>
+              </svg>
+              <div class="gauge-value" id="credValue">0</div>
+            </div>
+          </div>
+          <div class="gauge-card">
+            <h4>Sensationalism</h4>
+            <div class="circular-gauge" id="sensGauge">
+              <svg viewBox="0 0 100 100">
+                <circle class="track" cx="50" cy="50" r="42"/>
+                <circle class="fill" id="sensFill" cx="50" cy="50" r="42"
+                  stroke-dasharray="263.9" stroke-dashoffset="263.9"/>
+              </svg>
+              <div class="gauge-value" id="sensValue">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid"></div>
+      </div>
+
+      <!-- Risk Factors Card -->
+      <div class="glass-card">
+        <div class="risk-section">
+          <h3>⚠️ Risk Factors</h3>
+          <ul class="risk-list" id="riskList"></ul>
+        </div>
+        <div class="risk-section" style="margin-top:20px;">
+          <h3>✅ Credibility Indicators</h3>
+          <div id="credPhrases"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="app-footer">
+      <p>VerifyAI uses an ensemble ML pipeline. Results are indicative, not definitive.</p>
+    </footer>
+  </div>
+
+<script>
+const textarea = document.getElementById('newsInput');
+const charCount = document.getElementById('charCount');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const resultsSection = document.getElementById('resultsSection');
+
+// Character counter
+textarea.addEventListener('input', () => {
+  charCount.textContent = `${textarea.value.length} characters`;
+});
+
+// Analyze
+analyzeBtn.addEventListener('click', async () => {
+  const text = textarea.value.trim();
+  if (!text) { textarea.focus(); return; }
+
+  analyzeBtn.classList.add('loading');
+  analyzeBtn.disabled = true;
+  resultsSection.classList.remove('visible');
+
+  try {
+    const res = await fetch('/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    renderResults(data);
+  } catch (e) {
+    alert('Analysis failed. Is the server running?');
+    console.error(e);
+  } finally {
+    analyzeBtn.classList.remove('loading');
+    analyzeBtn.disabled = false;
+  }
+});
+
+function renderResults(d) {
+  const isReal = d.prediction === 'real';
+
+  // Verdict
+  const banner = document.getElementById('verdictBanner');
+  banner.className = `verdict-banner ${d.prediction}`;
+  document.getElementById('verdictIcon').textContent = isReal ? '✓' : '✗';
+  document.getElementById('verdictLabel').textContent = isReal
+    ? 'Likely Authentic' : 'Likely Fake';
+  document.getElementById('verdictDesc').textContent = isReal
+    ? `This content appears credible with ${d.confidence}% model confidence.`
+    : `This content shows signs of misinformation — ${d.confidence}% model confidence.`;
+
+  // Confidence bar
+  const pf = document.getElementById('progressFill');
+  pf.className = `progress-fill ${d.prediction}`;
+  setTimeout(() => pf.style.width = `${d.confidence}%`, 50);
+  document.getElementById('confValue').textContent = `${d.confidence}%`;
+
+  // Gauges
+  animateGauge('credFill', 'credValue', d.credibility_score, isReal ? '#10b981' : '#ef4444');
+  animateGauge('sensFill', 'sensValue', d.sensationalism_score,
+    d.sensationalism_score > 30 ? '#ef4444' : d.sensationalism_score > 10 ? '#f59e0b' : '#10b981');
+
+  // Stats grid
+  const s = d.text_statistics;
+  const stats = [
+    { v: s.word_count, l: 'Words' },
+    { v: s.sentence_count, l: 'Sentences' },
+    { v: `${s.caps_ratio}%`, l: 'Caps Ratio' },
+    { v: `${s.vocabulary_richness}%`, l: 'Vocab Richness' },
+    { v: s.readability_score, l: 'Readability' },
+    { v: s.exclamation_marks, l: 'Exclamations' }
+  ];
+  document.getElementById('statsGrid').innerHTML = stats.map(st =>
+    `<div class="stat-card"><div class="stat-value">${st.v}</div><div class="stat-label">${st.l}</div></div>`
+  ).join('');
+
+  // Risk factors
+  const rl = document.getElementById('riskList');
+  if (d.risk_factors.length === 0) {
+    rl.innerHTML = '<div class="no-risks">✅ No significant risk factors detected</div>';
+  } else {
+    rl.innerHTML = d.risk_factors.map(r =>
+      `<li class="risk-item ${r.severity}">
+        <span class="risk-dot"></span>
+        <div class="risk-content"><strong>${r.factor}</strong><span>${r.detail}</span></div>
+      </li>`
+    ).join('');
+  }
+
+  // Credibility phrases
+  const cp = document.getElementById('credPhrases');
+  if (d.credibility_phrases.length === 0) {
+    cp.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;padding:8px 0;">No credibility-suggesting phrases detected</div>';
+  } else {
+    cp.innerHTML = `<div class="cred-tags">${d.credibility_phrases.map(p =>
+      `<span class="cred-tag">"${p}"</span>`).join('')}</div>`;
+  }
+
+  resultsSection.classList.add('visible');
+  resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function animateGauge(fillId, valueId, score, color) {
+  const circumference = 263.9;
+  const fill = document.getElementById(fillId);
+  const valEl = document.getElementById(valueId);
+  fill.style.stroke = color;
+  fill.style.strokeDashoffset = circumference;
+  setTimeout(() => {
+    fill.style.strokeDashoffset = circumference - (circumference * score / 100);
+  }, 100);
+  // Animate number
+  let current = 0;
+  const target = Math.round(score);
+  const step = Math.max(1, Math.floor(target / 30));
+  const interval = setInterval(() => {
+    current = Math.min(current + step, target);
+    valEl.textContent = current;
+    if (current >= target) clearInterval(interval);
+  }, 30);
+}
+</script>
+</body>
+</html>
